@@ -1,2 +1,2 @@
-# sel-settings-terminal
-Determine settings for SEL relays based on terminal/console display commands 
+# tp-setting-excel-tool
+For extracting information from TP setting calculation aids

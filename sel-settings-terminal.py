@@ -15,7 +15,6 @@ This tool can be run from the IDLE prompt using the main def.
 Thoughtful ideas most welcome. 
 
 Installation instructions (for Python *2.7.9*):
- - pip install xlrd
  - pip install tablib
  - pip install regex
 
@@ -49,7 +48,6 @@ import argparse
 import glob
 import regex
 import tablib
-import xlrd
 import string
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))

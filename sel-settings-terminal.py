@@ -5,14 +5,14 @@
 """
 sel-settings-terminal.py
 
-A tool to (at least) extract information from Transpower setting 
+A tool to (at least) extract information from Transpower setting
 spreadsheets.
 
 Usage defined by running with option -h.
 
 This tool can be run from the IDLE prompt using the main def.
 
-Thoughtful ideas most welcome. 
+Thoughtful ideas most welcome.
 
 Installation instructions (for Python *2.7.9*):
  - pip install tablib
@@ -22,10 +22,10 @@ Installation instructions (for Python *2.7.9*):
  - within Transpower: pip install --proxy="transpower\mulhollandd:password@tptpxy001.transpower.co.nz:8080" packagename
  - if Python is not in your path you may need to include the path to executable, typically: C:\Python27\Scripts\pip
 
-TODO: 
+TODO:
  - so many things
- - sorting options on display and dump output?    
- - sort out guessing of Transpower standard design version 
+ - sorting options on display and dump output?
+ - sort out guessing of Transpower standard design version
  - sort out dumping all parameters and argparse dependencies
  - sort out extraction of DNP data
 """
@@ -96,7 +96,7 @@ def main(arg=None):
                         ' a Micro$oft Excel .xls spreadsheet. If no output provided then'\
                         ' output is to the screen.')
 
-    parser.add_argument('-p', '--path', metavar='PATH|FILE', nargs='+', 
+    parser.add_argument('-p', '--path', metavar='PATH|FILE', nargs='+',
                        help='Go recursively go through path PATH. Redundant if FILE'\
                        ' with extension .rdb is used. When recursively called, only'\
                        ' searches for files with:' +  TXT_EXTENSION + '. Globbing is'\
@@ -107,13 +107,13 @@ def main(arg=None):
 
     # not implemented
     #parser.add_argument('-a', '--all', action="store_true",
-    #                   help='Output all settings!')                       
-                       
+    #                   help='Output all settings!')
+
     # Not implemented yet
     #parser.add_argument('-d', '--design', action="store_true",
     #                   help='Attempt to determine Transpower standard design version and' \
     #                   ' include this information in output')
-                       
+
     parser.add_argument('-s', '--settings', metavar='G:S', type=str, nargs='+',
                        help='Settings in the form of G:S where G is the group'\
                        ' and S is the SEL variable name. If G: is omitted the search' \
@@ -134,10 +134,10 @@ def main(arg=None):
         args = parser.parse_args()
     else:
         args = parser.parse_args(arg.split())
-    
+
     # read in list of files
     files_to_do = return_file_paths([' '.join(args.path)], TXT_EXTENSION)
-    
+
     # sort out the reference data for knowing where to search in the text string
     lookup = SEL_SEARCH_EXPR
     if files_to_do != []:
@@ -146,7 +146,7 @@ def main(arg=None):
         print('Found nothing to do for path: ' + args.path[0])
         raw_input("Press any key to exit...")
         sys.exit()
-    
+
 def return_file_paths(args_path, file_extension):
     paths_to_work_on = []
     for p in args_path:
@@ -155,7 +155,7 @@ def return_file_paths(args_path, file_extension):
             paths_to_work_on +=  glob.glob(os.path.join(BASE_PATH,p))
         else:
             paths_to_work_on += glob.glob(p)
-            
+
     files_to_do = []
     # make a list of files to iterate over
     if paths_to_work_on != None:
@@ -167,7 +167,7 @@ def return_file_paths(args_path, file_extension):
             elif os.path.isdir(p_or_f) == True:
                 # walk about see what we can find
                 files_to_do = walkabout(p_or_f, file_extension)
-    return files_to_do        
+    return files_to_do
 
 def walkabout(p_or_f, file_extension):
     """ searches through a path p_or_f, picking up all files with EXTN
@@ -180,26 +180,26 @@ def walkabout(p_or_f, file_extension):
             if (os.path.basename(name)[-3:]).upper() == file_extension:
                 return_files.append(os.path.join(root,name))
     return return_files
-    
+
 def process_txt_files(files_to_do, args, reference_data):
     parameter_info = []
-        
-    for filename in files_to_do:      
+
+    for filename in files_to_do:
         extracted_data = extract_parameters(filename, args.settings, reference_data)
         parameter_info += extracted_data
 
     # for exporting to Excel or CSV
-    data = tablib.Dataset()    
+    data = tablib.Dataset()
     for k in parameter_info:
         data.append(k)
     data.headers = OUTPUT_HEADERS
 
     # don't overwrite existing file
-    name = OUTPUT_FILE_NAME 
-    if args.o == 'csv' or args.o == 'xlsx': 
+    name = OUTPUT_FILE_NAME
+    if args.o == 'csv' or args.o == 'xlsx':
         # this is stupid and klunky
         while os.path.exists(name + '.csv') or os.path.exists(name + '.xlsx'):
-            name += '_'        
+            name += '_'
 
     # write data
     if args.o == None:
@@ -226,23 +226,23 @@ def extract_parameters(filename, settings, reference_data):
      * (\n| |^)
        - Looks for either a new line CR/LF  or a space or the start of the file.
        - This is always true in process terminal views.
-     
+
      * ([A-Z0-9 _]{6})
-       - SEL setting names are typically uppercase without spaces comprising 
+       - SEL setting names are typically uppercase without spaces comprising
          characters A-Z 0-9 and sometimes with underscores (exception, DNP)
-     
+
      * =
        - Then followed by an equals character
-     
+
      * (?>([\w :+/\\()!,.\-_\\*]+)
        - There's quite a few options for what can be in a SEL expression
-       - This probably doesn't take them all into account add to suit 
-       - This is an atomic group expression which is a solution for making 
-         sure the delimiter doesn't get "eaten" because the delimiter is 
+       - This probably doesn't take them all into account add to suit
+       - This is an atomic group expression which is a solution for making
+         sure the delimiter doesn't get "eaten" because the delimiter is
          comprised of the same characters as the expression.
-         
+
        - This is well described here: http://www.rexegg.com/regex-quantifiers.html
-     
+
      * ([ ]{0}[A-Z0-9 _]{6}=|\n
        - Then the delimiter comes. This is the next SEL setting name, if there
          are multiple columns. Alternatively the delimiter is a newline CR/LF
@@ -251,18 +251,18 @@ def extract_parameters(filename, settings, reference_data):
 
     """
     TODO: This is how the --all or -a parameter should be implemented
-    results = regex.findall('(\n| |^)([A-Z0-9 _]{6})=(?>([\w :+/\\()!,.\-_\\*]+)([ ]{0}[A-Z0-9 _]{6}=|\n))', 
+    results = regex.findall('(\n| |^)([A-Z0-9 _]{6})=(?>([\w :+/\\()!,.\-_\\*]+)([ ]{0}[A-Z0-9 _]{6}=|\n))',
         data, flags=regex.MULTILINE, overlapped=True)
-    
+
     Just need to break down the groups. Trivial. Execise for the reader.
     :-)
     """
-    
+
     parameter_list = []
     for k in settings:
         parameter_list.append(k.translate(None, '\"'))
-    
-    
+
+
     for parameter in parameter_list:
         data = read_data
         result = None
@@ -273,66 +273,65 @@ def extract_parameters(filename, settings, reference_data):
         if parameter.find(PARAMETER_SEPARATOR) != -1:
             grouper = parameter.split(PARAMETER_SEPARATOR)[0]
             setting = parameter.split(PARAMETER_SEPARATOR)[1]
-        
+
         if parameter.find(PARAMETER_SEPARATOR) == -1 or \
             SEL_SEARCH_EXPR[grouper] == None:
             # print 'Searching the whole file without bounds'
             if parameter in ['FID', 'PARTNO', 'DEVID']:
-                result = get_special_parameter(parameter,data)        
+                result = get_special_parameter(parameter,data)
             else:
                 result = find_SEL_text_parameter(setting, [data])
-        
+
         else:
             # now search inside this data group for the desired setting
             data = find_between_text( \
                 start_options = SEL_SEARCH_EXPR[grouper][0], \
-                end_options = SEL_SEARCH_EXPR[grouper][1],  
-                text = data) 
-        
+                end_options = SEL_SEARCH_EXPR[grouper][1],
+                text = data)
+
             if data:
                 result = find_SEL_text_parameter(setting, data)
-        
 
-        if result <> None:
+        if result:
             filename = os.path.basename(filename)
             parameter_info.append([filename, parameter, result])
-            
+
     return parameter_info
 
 def find_SEL_text_parameter(setting, data_array):
-    
+
     for r in data_array:
-        # Example for TR setting: 
+        # Example for TR setting:
         #  - (\n| |^)(TR    )=(?>([\w :+/\\()!,.\-_\\*]+)([ ]{0}[A-Z0-9 _]{6}=|\n))
-        found_parameter = regex.findall('(\n| |^)(' + \
+        found_parameter = regex .findall('(\n| |^)(' + \
                 string.ljust(setting, 6, ' ') + \
                 ')=(?>([\w :+/\\()!,.\-_\\*]+)([ ]{0}[A-Z0-9 _]{6}=|\n))', \
                 r, flags=regex.MULTILINE, overlapped=True)
-         
+
         if found_parameter:
             return found_parameter[0][2]
-        
+
 def find_between_text(start_options, end_options, text):
     # return matches between arbitrary start and end options
     # with matches across lines
     results = []
     start_regex = ''
     for k in start_options:
-        start_regex = k 
- 
+        start_regex = k
+
         # create ending regex expression
-        end_regex = '('                    
+        end_regex = '('
         for k in end_options:
             end_regex += k + '|'
-        end_regex = end_regex[0:-1]                    
+        end_regex = end_regex[0:-1]
         end_regex += ')'
-        
+
         result = regex.findall(start_regex + '((.|\n)+?)' + end_regex, text, flags = regex.MULTILINE)
-        
+
         if result:
             # print result[0][0]
             results.append(result[0][0])
-        
+
     return results
 
 def get_special_parameter(name,data):
@@ -340,15 +339,16 @@ def get_special_parameter(name,data):
     # name=FID for "FID=SEL-351S-6-R107-V0-Z003003-D20011129","0958"
     # name=PARTNO for "PARTNO=0351S61H3351321","05AE"
     # name=DEVID for "DEVID=TMU 2782","0402"
-    return regex.findall(r'^\"' + name + r'=([\w :+/\\()!,.\-_\\*\"]*\n)', 
+
+    return regex.findall(r'\"' + name + r'=([\w :+/\\()!,.\-_\\*\"]*)',
         data, flags=regex.MULTILINE, overlapped=True)
 
 def get_dnp(name, data):
     # Not implemented yet
-    # Analogs  = 0 2 4 8 10 12 31 35 106 
+    # Analogs  = 0 2 4 8 10 12 31 35 106
     # Binaries = 295 677 678 223 216 224 1020 1021 1022 296 527 571 567 595 735  \
     #       734 233 242 740 251 179 180 181 360 361 362 863 364 865 866 867  \
-    #       767 766 765 679 680 681 864 
+    #       767 766 765 679 680 681 864
     pass
 
 def display_info(parameter_info):
@@ -360,19 +360,19 @@ def display_info(parameter_info):
                 lengths[index] = max(lengths[index], len(element))
             except IndexError:
                 lengths.append(len(element))
-    
+
     parameter_info.insert(0,OUTPUT_HEADERS)
-    # now display in columns            
+    # now display in columns
     for line in parameter_info:
-        display_line = '' 
+        display_line = ''
         for index,element in enumerate(line):
             display_line += element.ljust(lengths[index]+2,' ')
         print display_line
-        
-if __name__ == '__main__': 
+
+if __name__ == '__main__':
     if len(sys.argv) == 1 :
-        main(r' -o xlsx --path "in" --settings "G1:TID FID G1:TR G1:81D1P G1:81D1D G1:81D2P G1:81D2P G1:E81"')
+        main(r' -o xlsx --path "txt" --settings "G1:RELID G1:RMID G1:RID G1:TID PARTNO DEVID FID"')
     else:
         main()
     raw_input("Press any key to exit...")
-        
+
